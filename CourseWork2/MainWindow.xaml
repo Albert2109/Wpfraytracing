@@ -1,0 +1,103 @@
+﻿<Window x:Class="RayGen.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RayGen"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800"
+        KeyDown="Window_KeyDown">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="4*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <DockPanel Grid.Row="0" Grid.Column="0">
+            <Menu DockPanel.Dock="Top">
+                <MenuItem Header="Add">
+                    <MenuItem Header="Plane" Click="AddPlane"/>
+                    <MenuItem Header="Cube" Click="AddCube"/>
+                    <MenuItem Header="Circle" Click="AddCircle"/>
+                    <MenuItem Header="Sphere" Click="AddSphere"/>
+                    <MenuItem Header="Torus" Click="AddTorus"/>
+                    <MenuItem Header="Cylinder" Click="AddCilinder"/>
+                    <MenuItem Header="Cone" Click="AddCone"/>
+                    <MenuItem Header="Light" Click="AddLight"/>
+                </MenuItem>
+            </Menu>
+
+            <Viewport3D x:Name="viewport3d" RenderTransformOrigin="0.506,0.519" 
+                        PreviewMouseLeftButtonDown="Viewport3D_MouseDown" Margin="0,25,0,0">
+                <Viewport3D.Camera>
+                    <PerspectiveCamera Position="0,20,20" LookDirection="0,-20,-20" UpDirection="0,1,0" FieldOfView="45"/>
+                </Viewport3D.Camera>
+            </Viewport3D>
+        </DockPanel>
+
+        <ScrollViewer Grid.Row="0" Grid.Column="1" Margin="5" VerticalAlignment="Top" VerticalScrollBarVisibility="Auto">
+            <StackPanel VerticalAlignment="Top">
+                <TextBlock Text="Shapes in Viewport" FontWeight="Bold" Margin="0,0,0,10"/>
+                <ListBox x:Name="shapesListBox" Width="120" Margin="10" SelectionChanged="ShapesListBox_SelectionChanged"/>
+
+                <TextBlock Text="Selected Shape" FontWeight="Bold" Margin="0,10,0,10"/>
+                <TextBox x:Name="ShapeTypeTextBox" Width="120" Margin="10" IsReadOnly="True"/>
+
+                <TextBlock Text="Transformations" FontWeight="Bold" Margin="0,10,0,10"/>
+                <TextBlock Text="Position"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="X:" Width="20"/>
+                    <TextBox Width="50" Name="PosX"/>
+                    <TextBlock Text="Y:" Width="20" Margin="10,0,0,0"/>
+                    <TextBox Width="50" Name="PosY"/>
+                    <TextBlock Text="Z:" Width="20" Margin="10,0,0,0"/>
+                    <TextBox Width="50" Name="PosZ"/>
+                </StackPanel>
+                <TextBlock Text="Rotation" Margin="0,10,0,0"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="X:" Width="20"/>
+                    <TextBox Width="50" Name="RotX"/>
+                    <TextBlock Text="Y:" Width="20" Margin="10,0,0,0"/>
+                    <TextBox Width="50" Name="RotY"/>
+                    <TextBlock Text="Z:" Width="20" Margin="10,0,0,0"/>
+                    <TextBox Width="50" Name="RotZ"/>
+                </StackPanel>
+                <TextBlock Text="Scale" Margin="0,10,0,0"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="X:" Width="20"/>
+                    <TextBox Width="50" Name="ScaleX"/>
+                    <TextBlock Text="Y:" Width="20" Margin="10,0,0,0"/>
+                    <TextBox Width="50" Name="ScaleY"/>
+                    <TextBlock Text="Z:" Width="20" Margin="10,0,0,0"/>
+                    <TextBox Width="50" Name="ScaleZ"/>
+                </StackPanel>
+                <Button Content="Apply Transform" Click="ApplyTransform_Click" Margin="0,10,0,0"/>
+
+                <TextBlock Text="Material Type" FontWeight="Bold" Margin="0,10,0,10"/>
+                <ComboBox x:Name="materialTypeComboBox" Width="120" Margin="10" SelectionChanged="MaterialTypeComboBox_SelectionChanged">
+                    <ComboBoxItem Content="Diffuse" IsSelected="True"/>
+                  
+                    <ComboBoxItem Content="Specular"/>
+                   
+                </ComboBox>
+
+                <TextBlock Text="Shininess" FontWeight="Bold" Margin="0,10,0,10"/>
+                <TextBox x:Name="shininessTextBox" Width="120" Margin="10" Text="50" TextChanged="ShininessTextBox_TextChanged"/>
+                <TextBlock Text="Specular Intensity" FontWeight="Bold" Margin="0,10,0,10"/>
+                <TextBox x:Name="specularIntensityTextBox" Width="120" Margin="10" Text="0.5" TextChanged="SpecularIntensityTextBox_TextChanged"/>
+                <TextBlock Text="Reflection Intensity" FontWeight="Bold" Margin="0,10,0,10"/>
+                <TextBox x:Name="reflectionIntensityTextBox" Width="120" Margin="10" Text="0.5" TextChanged="ReflectionIntensityTextBox_TextChanged"/>
+                <TextBlock Text="Color Picker" FontWeight="Bold" Margin="0,10,0,10"/>
+                <xctk:ColorPicker Name="colorPicker" SelectedColorChanged="ColorPicker_SelectedColorChanged" Width="120" Margin="10"/>
+                
+            </StackPanel>
+        </ScrollViewer>
+
+        <TextBox Grid.Row="1" Grid.ColumnSpan="2" Name="debugTextBox" Height="100" IsReadOnly="True" TextWrapping="Wrap"/>
+    </Grid>
+</Window>
