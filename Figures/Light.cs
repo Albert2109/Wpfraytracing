@@ -532,27 +532,29 @@ namespace Figures
             return false;
         }
 
-        public ModelVisual3D CreateLineVisual(Point3D start, Point3D end, double diameter, Color color)
+        private ModelVisual3D CreateModelVisual(MeshGeometry3D mesh, Color color)
         {
-            var mesh = new MeshGeometry3D();
-            var builder = new MeshBuilder();
-            builder.AddCylinder(start, end, diameter, 16);
-            mesh = builder.ToMesh();
             var material = new DiffuseMaterial(new SolidColorBrush(color));
             var model = new GeometryModel3D(mesh, material);
-            Model.Children.Add(model);
             return new ModelVisual3D { Content = model };
         }
 
+
+        public ModelVisual3D CreateLineVisual(Point3D start, Point3D end, double diameter, Color color)
+        {
+            var builder = new MeshBuilder();
+            builder.AddCylinder(start, end, diameter, 16);
+            var mesh = builder.ToMesh();
+            return CreateModelVisual(mesh, color);
+        }
+
+
         public ModelVisual3D CreateSphereVisual(Point3D center, double radius, Color color)
         {
-            var mesh = new MeshGeometry3D();
             var builder = new MeshBuilder();
             builder.AddSphere(center, radius, 16, 16);
-            mesh = builder.ToMesh();
-            var material = new DiffuseMaterial(new SolidColorBrush(color));
-            var model = new GeometryModel3D(mesh, material);
-            return new ModelVisual3D { Content = model };
+            var mesh = builder.ToMesh();
+            return CreateModelVisual(mesh, color);
         }
 
         public class Ray
