@@ -6,7 +6,7 @@ using Figures.Materials;
 
 namespace Figures
 {
-    public class Plane:ergreg
+    public class Plane:Figures
     {
         public event EventHandler<MouseButtonEventArgs> MouseDown;
         public event EventHandler DeleteClicked;
@@ -105,7 +105,7 @@ namespace Figures
             return (transformedP0, transformedP1, transformedP2, transformedP3);
         }
 
-        public virtual bool IntersectRay(RayTracerLight.Ray ray, out Point3D hitPoint)
+        public override bool IntersectRay(RayTracerLight.Ray ray, out Point3D hitPoint)
         {
             hitPoint = new Point3D();
 
