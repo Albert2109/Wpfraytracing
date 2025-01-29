@@ -511,35 +511,17 @@ namespace RayGen
 
                     if (Keyboard.IsKeyDown(Key.M))
                     {
-                        Point3D currentHitPosition = modelTransformer.GetHitPosition(viewport3d, currentMousePos);
-                        Point3D previousHitPosition = modelTransformer.GetHitPosition(viewport3d, previousMousePos);
-                        double deltaX = currentHitPosition.X - previousHitPosition.X;
-                        double deltaY = currentHitPosition.Y - previousHitPosition.Y;
-                        double deltaZ = currentHitPosition.Z - previousHitPosition.Z;
-
-                        modelTransformer.TranslateModel((Transform3DGroup)selectedModel.Transform, deltaX, deltaY, deltaZ);
-                        previousMousePos = currentMousePos;
+                        ApplyTranslation(currentMousePos);
                     }
 
                     if (Keyboard.IsKeyDown(Key.R))
                     {
-                        double dx = currentMousePos.X - previousMousePos.X;
-                        double dy = currentMousePos.Y - previousMousePos.Y;
-
-                        modelTransformer.RotateModel((Transform3DGroup)selectedModel.Transform, dx, dy);
-
-                        previousMousePos = currentMousePos;
+                        ApplyRotation(currentMousePos);
                     }
 
                     if (Keyboard.IsKeyDown(Key.E))
                     {
-                        double scaleDeltaX = currentMousePos.X - previousMousePos.X;
-                        double scaleDeltaY = currentMousePos.Y - previousMousePos.Y;
-                        double scaleDeltaZ = currentMousePos.X - previousMousePos.X;
-
-                        modelTransformer.ScaleModel((Transform3DGroup)selectedModel.Transform, scaleDeltaX, scaleDeltaY, scaleDeltaZ);
-
-                        previousMousePos = currentMousePos;
+                        ApplyScaling(currentMousePos);
                     }
 
                     UpdateTransformFields();
@@ -550,6 +532,38 @@ namespace RayGen
                 debugTextBox.AppendText($"Error on mouse move: {ex.Message}\n");
             }
         }
+
+        private void ApplyTranslation(System.Windows.Point currentMousePos)
+        {
+            Point3D currentHitPosition = modelTransformer.GetHitPosition(viewport3d, currentMousePos);
+            Point3D previousHitPosition = modelTransformer.GetHitPosition(viewport3d, previousMousePos);
+            double deltaX = currentHitPosition.X - previousHitPosition.X;
+            double deltaY = currentHitPosition.Y - previousHitPosition.Y;
+            double deltaZ = currentHitPosition.Z - previousHitPosition.Z;
+
+            modelTransformer.TranslateModel((Transform3DGroup)selectedModel.Transform, deltaX, deltaY, deltaZ);
+            previousMousePos = currentMousePos;
+        }
+
+        private void ApplyRotation(System.Windows.Point currentMousePos)
+        {
+            double dx = currentMousePos.X - previousMousePos.X;
+            double dy = currentMousePos.Y - previousMousePos.Y;
+
+            modelTransformer.RotateModel((Transform3DGroup)selectedModel.Transform, dx, dy);
+            previousMousePos = currentMousePos;
+        }
+
+        private void ApplyScaling(System.Windows.Point currentMousePos)
+        {
+            double scaleDeltaX = currentMousePos.X - previousMousePos.X;
+            double scaleDeltaY = currentMousePos.Y - previousMousePos.Y;
+            double scaleDeltaZ = currentMousePos.X - previousMousePos.X;
+
+            modelTransformer.ScaleModel((Transform3DGroup)selectedModel.Transform, scaleDeltaX, scaleDeltaY, scaleDeltaZ);
+            previousMousePos = currentMousePos;
+        }
+
 
         private void Viewport3D_MouseUp(object sender, MouseButtonEventArgs e)
         {
@@ -591,17 +605,26 @@ namespace RayGen
         private void ApplyTransform()
         {
             if (selectedModel == null) return;
+            ApplyTranslation();
+           ApplyRotation();
+            ApplyScale();
 
+            UpdateTransformFields();
+        }
+        private void ApplyTranslation()
+        {
             if (double.TryParse(PosX.Text, out double posX) &&
-                double.TryParse(PosY.Text, out double posY) &&
-                double.TryParse(PosZ.Text, out double posZ))
+               double.TryParse(PosY.Text, out double posY) &&
+               double.TryParse(PosZ.Text, out double posZ))
             {
                 System.Windows.Media.Media3D.Vector3D currentTranslation = modelTransformer.GetTranslation(_transformGroup);
                 modelTransformer.TranslateModel((Transform3DGroup)selectedModel.Transform, posX - currentTranslation.X,
                                                 posY - currentTranslation.Y,
                                                 posZ - currentTranslation.Z);
             }
-
+        }
+        private void ApplyRotation()
+        {
             if (double.TryParse(RotX.Text, out double rotX) &&
                 double.TryParse(RotY.Text, out double rotY) &&
                 double.TryParse(RotZ.Text, out double rotZ))
@@ -610,7 +633,9 @@ namespace RayGen
                 modelTransformer.RotateModel((Transform3DGroup)selectedModel.Transform, rotX - currentRotation.Axis.X,
                                              rotY - currentRotation.Axis.Y);
             }
-
+        }
+        private void ApplyScale()
+        {
             if (double.TryParse(ScaleX.Text, out double scaleX) &&
                 double.TryParse(ScaleY.Text, out double scaleY) &&
                 double.TryParse(ScaleZ.Text, out double scaleZ))
@@ -620,73 +645,84 @@ namespace RayGen
                                             scaleY / currentScale.Y - 1,
                                             scaleZ / currentScale.Z - 1);
             }
-
-            UpdateTransformFields();
         }
+        private void UpdateTranslationFields()
+        {
+            var translation = modelTransformer.GetTranslation(_transformGroup);
+            PosX.Text = translation.X.ToString();
+            PosY.Text = translation.Y.ToString();
+            PosZ.Text = translation.Z.ToString();
+        }
+        private void UpdateRotationFields()
+        {
+            Quaternion rotation = modelTransformer.GetRotation(_transformGroup);
+            RotX.Text = rotation.Axis.X.ToString();
+            RotY.Text = rotation.Axis.Y.ToString();
+            RotZ.Text = rotation.Axis.Z.ToString();
+        }
+        private void UpdateScaleFields()
+        {
+            System.Windows.Media.Media3D.Vector3D scale = modelTransformer.GetScale(_transformGroup);
+            ScaleX.Text = scale.X.ToString();
+            ScaleY.Text = scale.Y.ToString();
+            ScaleZ.Text = scale.Z.ToString();
+        }
+        private void UpdateFigureInfo()
+        {
+            var figureInfo = figuresInfo.FirstOrDefault(f => f.ModelVisual == selectedModel);
+            if (figureInfo == null) return;
 
+            var translation = modelTransformer.GetTranslation(_transformGroup);
+            var rotation = modelTransformer.GetRotation(_transformGroup);
+            var scale = modelTransformer.GetScale(_transformGroup);
+
+            figureInfo.Position = new Point3D(translation.X, translation.Y, translation.Z);
+            figureInfo.Rotation = new System.Windows.Media.Media3D.Vector3D(rotation.Axis.X, rotation.Axis.Y, rotation.Axis.Z);
+            figureInfo.Scale = new System.Windows.Media.Media3D.Vector3D(scale.X, scale.Y, scale.Z);
+
+            PosX.Text = figureInfo.Position.X.ToString();
+            PosY.Text = figureInfo.Position.Y.ToString();
+            PosZ.Text = figureInfo.Position.Z.ToString();
+
+            RotX.Text = figureInfo.Rotation.X.ToString();
+            RotY.Text = figureInfo.Rotation.Y.ToString();
+            RotZ.Text = figureInfo.Rotation.Z.ToString();
+
+            ScaleX.Text = figureInfo.Scale.X.ToString();
+            ScaleY.Text = figureInfo.Scale.Y.ToString();
+            ScaleZ.Text = figureInfo.Scale.Z.ToString();
+
+            UpdateFigureMaterial(figureInfo);
+        }
+        private void UpdateFigureMaterial(FigureInfo figureInfo)
+        {
+            colorPicker.SelectedColor = figureInfo.Color;
+
+            if (figureInfo.CustomMaterial is MyDiffuseMaterial diffuseMaterial)
+            {
+                diffuseMaterial.Color = figureInfo.Color;
+            }
+            else if (figureInfo.CustomMaterial is MySpecularMaterial specularMaterial)
+            {
+                specularMaterial.Color = figureInfo.Color;
+            }
+
+            if (selectedModel.Content is GeometryModel3D geometryModel)
+            {
+                geometryModel.Material = figureInfo.CustomMaterial.GetMaterial();
+            }
+        }
         private void UpdateTransformFields()
         {
-            if (selectedModel != null && selectedModel.Transform is Transform3DGroup transformGroup)
-            {
-                _transformGroup = transformGroup;
+            if (selectedModel == null || !(selectedModel.Transform is Transform3DGroup transformGroup)) return;
 
-                System.Windows.Media.Media3D.Vector3D translation = modelTransformer.GetTranslation(_transformGroup);
-                Quaternion rotation = modelTransformer.GetRotation(_transformGroup);
-                System.Windows.Media.Media3D.Vector3D scale = modelTransformer.GetScale(_transformGroup);
 
-                PosX.Text = translation.X.ToString();
-                PosY.Text = translation.Y.ToString();
-                PosZ.Text = translation.Z.ToString();
+            _transformGroup = transformGroup;
 
-                RotX.Text = rotation.Axis.X.ToString();
-                RotY.Text = rotation.Axis.Y.ToString();
-                RotZ.Text = rotation.Axis.Z.ToString();
-
-                ScaleX.Text = scale.X.ToString();
-                ScaleY.Text = scale.Y.ToString();
-                ScaleZ.Text = scale.Z.ToString();
-
-                var figureInfo = figuresInfo.FirstOrDefault(f => f.ModelVisual == selectedModel);
-                if (figureInfo != null)
-                {
-                   
-                    figureInfo.Position = new Point3D(translation.X, translation.Y, translation.Z);
-                    figureInfo.Rotation = new System.Windows.Media.Media3D.Vector3D(rotation.Axis.X, rotation.Axis.Y, rotation.Axis.Z);
-                    figureInfo.Scale = new System.Windows.Media.Media3D.Vector3D(scale.X, scale.Y, scale.Z);
-
-                    PosX.Text = figureInfo.Position.X.ToString();
-                    PosY.Text = figureInfo.Position.Y.ToString();
-                    PosZ.Text = figureInfo.Position.Z.ToString();
-
-                    RotX.Text = figureInfo.Rotation.X.ToString();
-                    RotY.Text = figureInfo.Rotation.Y.ToString();
-                    RotZ.Text = figureInfo.Rotation.Z.ToString();
-
-                    ScaleX.Text = figureInfo.Scale.X.ToString();
-                    ScaleY.Text = figureInfo.Scale.Y.ToString();
-                    ScaleZ.Text = figureInfo.Scale.Z.ToString();
-
-                   
-                    colorPicker.SelectedColor = figureInfo.Color;
-
-                    
-                    if (figureInfo.CustomMaterial is MyDiffuseMaterial diffuseMaterial)
-                    {
-                        diffuseMaterial.Color = figureInfo.Color;
-                    }
-                    else if (figureInfo.CustomMaterial is MySpecularMaterial specularMaterial)
-                    {
-                        specularMaterial.Color = figureInfo.Color;
-                    }
-
-                   
-                    var geometryModel = selectedModel.Content as GeometryModel3D;
-                    if (geometryModel != null)
-                    {
-                        geometryModel.Material = figureInfo.CustomMaterial.GetMaterial();
-                    }
-                }
-            }
+            UpdateTranslationFields();
+            UpdateRotationFields();
+            UpdateScaleFields();
+            UpdateFigureInfo();
         }
 
 
@@ -701,7 +737,7 @@ namespace RayGen
                 UpdateTransformFields();
             }
         }
-
+           
         private void SelectShapeInListBox(ModelVisual3D model)
         {
             foreach (ListBoxItem item in shapesListBox.Items)
