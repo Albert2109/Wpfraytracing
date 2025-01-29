@@ -6,7 +6,7 @@ using Figures.Materials;
 
 namespace Figures
 {
-    public class Circle:ergreg
+    public class Circle:Figures
     {
         public event EventHandler<MouseButtonEventArgs> MouseDown;
         public event EventHandler DeleteClicked;
@@ -91,7 +91,7 @@ namespace Figures
             return Color.FromRgb(r, g, b);
         }
 
-        public bool IntersectRay(RayTracerLight.Ray ray, out Point3D hitPoint)
+        public override bool IntersectRay(RayTracerLight.Ray ray, out Point3D hitPoint)
         {
             hitPoint = new Point3D();
 

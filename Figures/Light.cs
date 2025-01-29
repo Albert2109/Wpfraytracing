@@ -85,10 +85,11 @@ namespace Figures
         }
 
 
-        public void ShowRayTracingResults(List<ModelVisual3D> modelVisuals, List<Plane> planes, List<Sphere> spheres, List<Torus> toruses, List<Cone> cones, List<Cylinder> cylinders, List<Circle> circles, List<Cube> cubes)
+        public void ShowRayTracingResults(List<ModelVisual3D> modelVisuals, List<Figures> figures)
         {
             DebugTextBox.AppendText("Початок трасування променів...\n");
 
+            
             foreach (var modelVisual in modelVisuals)
             {
                 var model = modelVisual.Content as GeometryModel3D;
@@ -100,71 +101,21 @@ namespace Figures
                 }
             }
 
-            foreach (var plane in planes)
+           
+            foreach (var figure in figures)
             {
-                SaveInitialColor(plane.Model);
-                DebugTextBox.AppendText($"Трасування променів для площини з координатами {plane.Model.Bounds}\n");
-
-                
-                var (transformedP0, transformedP1, transformedP2, transformedP3) = plane.GetTransformedPositions();
-                Debug.WriteLine($"Transformed Plane Positions: P0: {transformedP0}, P1: {transformedP1}, P2: {transformedP2}, P3: {transformedP3}");
-
-                TraceRays(plane);
-            }
-
-            foreach (var sphere in spheres)
-            {
-                if (sphere != null && sphere.Model != null)
-                {
-                    SaveInitialColor(sphere.Model);
-                    DebugTextBox.AppendText($"Трасування променів для сфери з координатами {sphere.Model.Bounds}\n");
-                    TraceRays(sphere);
-                }
-            }
-
-            foreach (var torus in toruses)
-            {
-                if (torus != null && torus.Model != null)
-                {
-                    SaveInitialColor(torus.Model);
-                    DebugTextBox.AppendText($"Трасування променів для тора з координатами {torus.Model.Bounds}\n");
-                    TraceRays(torus);
-                }
-            }
-
-            foreach (var cone in cones)
-            {
-                SaveInitialColor(cone.Model);
-                DebugTextBox.AppendText($"Трасування променів для конуса з координатами {cone.Model.Bounds}\n");
-                TraceRays(cone);
-            }
-
-            foreach (var cylinder in cylinders)
-            {
-                SaveInitialColor(cylinder.Model);
-                DebugTextBox.AppendText($"Трасування променів для циліндра з координатами {cylinder.Model.Bounds}\n");
-                TraceRays(cylinder);
-            }
-
-            foreach (var circle in circles)
-            {
-                SaveInitialColor(circle.Model);
-                DebugTextBox.AppendText($"Трасування променів для кола з координатами {circle.Model.Bounds}\n");
-                circle.UpdatePositions(circle.GetTransformedCenter(), circle.GetTransformedRadius());
-                TraceRays(circle);
-            }
-
-            foreach (var cube in cubes)
-            {
-                SaveInitialColor(cube.Model);
-                DebugTextBox.AppendText($"Трасування променів для куба з координатами {cube.Model.Bounds}\n");
-                TraceRays(cube);
+                var figureGetype = figure.GetType();
+                SaveInitialColor(figure.Model);
+                TraceRays(figure);
+                DebugTextBox.AppendText($"Фігура{figureGetype.Name} з координатами{figure.Model.Bounds}");
+               
             }
 
             Viewport.UpdateLayout();
             Viewport.InvalidateVisual();
             DebugTextBox.AppendText("Трасування променів завершено.\n");
         }
+
 
         private void SaveInitialColor(Model3D model)
         {
@@ -182,6 +133,38 @@ namespace Figures
             if (initialColors.TryGetValue(model, out var color) && model is GeometryModel3D geometryModel && geometryModel.Material is DiffuseMaterial diffuseMaterial)
             {
                 diffuseMaterial.Brush = new SolidColorBrush(color);
+            }
+        }
+        public void TraceRays(Figures figure)
+        {
+            Transform3D transform = figure.Model.Transform;
+
+            foreach (var ray in rays)
+            {
+               
+                Ray transformedRay = TransformRay(ray, transform);
+
+                
+                Debug.WriteLine($"Tracing ray from {transformedRay.Origin} in direction {transformedRay.Direction} for {figure.GetType().Name} at position {figure.Model.Transform.Value.OffsetX}, {figure.Model.Transform.Value.OffsetY}, {figure.Model.Transform.Value.OffsetZ}");
+
+                
+                if (figure.IntersectRay(transformedRay, out Point3D hitPoint))
+                {
+                    figure.ChangeColor(figure.GetLighterColor()); 
+
+                    var lineVisual = CreateLineVisual(ray.Origin, hitPoint, 0.05, Colors.Red);
+                    var sphereVisual = CreateSphereVisual(hitPoint, 0.1, Colors.Yellow);
+                    rayVisuals.Add(lineVisual);
+                    rayVisuals.Add(sphereVisual);
+                    Viewport.Children.Add(lineVisual);
+                    Viewport.Children.Add(sphereVisual);
+                }
+                else
+                {
+                    var lineVisual = CreateLineVisual(ray.Origin, ray.Origin + ray.Direction * RayLength, 0.05, Colors.Blue);
+                    rayVisuals.Add(lineVisual);
+                    Viewport.Children.Add(lineVisual);
+                }
             }
         }
 
@@ -215,228 +198,7 @@ namespace Figures
             }
         }
 
-        public void TraceRays(Plane plane)
-        {
-            Transform3D transform = plane.Model.Transform;
-            foreach (var ray in rays)
-            {
-                Ray transformedRay = TransformRay(ray, transform);
-
-                Debug.WriteLine($"Tracing ray from {transformedRay.Origin} in direction {transformedRay.Direction} for plane at position {plane.Model.Transform.Value.OffsetX}, {plane.Model.Transform.Value.OffsetY}, {plane.Model.Transform.Value.OffsetZ}");
-
-                if (plane.IntersectRay(transformedRay, out Point3D hitPoint))
-                {
-                    plane.ChangeColor(plane.GetLighterColor());
-                    var lineVisual = CreateLineVisual(ray.Origin, hitPoint, 0.05, Colors.Red);
-                    var sphereVisual = CreateSphereVisual(hitPoint, 0.1, Colors.Yellow);
-                    rayVisuals.Add(lineVisual);
-                    rayVisuals.Add(sphereVisual);
-                    Viewport.Children.Add(lineVisual);
-                    Viewport.Children.Add(sphereVisual);
-                }
-                else
-                {
-                    var lineVisual = CreateLineVisual(ray.Origin, ray.Origin + ray.Direction * RayLength, 0.05, Colors.Blue);
-                    rayVisuals.Add(lineVisual);
-                    Viewport.Children.Add(lineVisual);
-                }
-            }
-        }
-
-
-
-
-        public void TraceRays(Cube cube)
-        {
-            Transform3D transform = cube.Model.Transform;
-            bool isHit = false;
-            foreach (var ray in rays)
-            {
-                Ray transformedRay = TransformRay(ray, transform);
-                Debug.WriteLine($"Tracing ray from {transformedRay.Origin} in direction {transformedRay.Direction} for cube at position {cube.Model.Transform.Value.OffsetX}, {cube.Model.Transform.Value.OffsetY}, {cube.Model.Transform.Value.OffsetZ}");
-                if (cube.IntersectRay(transformedRay, out Point3D hitPoint))
-                {
-                    isHit = true;
-                    Debug.WriteLine($"Ray hit at {hitPoint}");
-                    var lineVisual = CreateLineVisual(ray.Origin, hitPoint, 0.05, Colors.Red);
-                    var sphereVisual = CreateSphereVisual(hitPoint, 0.1, Colors.Yellow);
-                    rayVisuals.Add(lineVisual);
-                    rayVisuals.Add(sphereVisual);
-                    Viewport.Children.Add(lineVisual);
-                    Viewport.Children.Add(sphereVisual);
-                }
-                else
-                {
-                    var lineVisual = CreateLineVisual(ray.Origin, ray.Origin + ray.Direction * RayLength, 0.05, Colors.Blue);
-                    rayVisuals.Add(lineVisual);
-                    Viewport.Children.Add(lineVisual);
-                }
-            }
-
-            if (isHit)
-            {
-                cube.ChangeColor(cube.GetLighterColor());
-            }
-        }
-
-
-
-        public void TraceRays(Sphere sphere)
-        {
-            Transform3D transform = sphere.Model.Transform;
-            bool isHit = false;
-            foreach (var ray in rays)
-            {
-                Ray transformedRay = TransformRay(ray, transform);
-                if (sphere.IntersectRay(transformedRay, out Point3D hitPoint))
-                {
-                    isHit = true;
-                    var lineVisual = CreateLineVisual(ray.Origin, hitPoint, 0.05, Colors.Red);
-                    var sphereVisual = CreateSphereVisual(hitPoint, 0.1, Colors.Yellow);
-                    rayVisuals.Add(lineVisual);
-                    rayVisuals.Add(sphereVisual);
-                    Viewport.Children.Add(lineVisual);
-                    Viewport.Children.Add(sphereVisual);
-                }
-                else
-                {
-                    var lineVisual = CreateLineVisual(ray.Origin, ray.Origin + ray.Direction * RayLength, 0.05, Colors.Blue);
-                    rayVisuals.Add(lineVisual);
-                    Viewport.Children.Add(lineVisual);
-                }
-            }
-
-            if (isHit)
-            {
-                sphere.ChangeColor(sphere.GetLighterColor());
-            }
-        }
-
-
-        public void TraceRays(Torus torus)
-        {
-            Transform3D transform = torus.Model.Transform;
-            bool isHit = false;
-            foreach (var ray in rays)
-            {
-                Ray transformedRay = TransformRay(ray, transform);
-                if (torus.IntersectRay(transformedRay, out Point3D hitPoint))
-                {
-                    isHit = true;
-                    var lineVisual = CreateLineVisual(ray.Origin, hitPoint, 0.05, Colors.Red);
-                    var sphereVisual = CreateSphereVisual(hitPoint, 0.1, Colors.Yellow);
-                    rayVisuals.Add(lineVisual);
-                    rayVisuals.Add(sphereVisual);
-                    Viewport.Children.Add(lineVisual);
-                    Viewport.Children.Add(sphereVisual);
-                }
-                else
-                {
-                    var lineVisual = CreateLineVisual(ray.Origin, ray.Origin + ray.Direction * RayLength, 0.05, Colors.Blue);
-                    rayVisuals.Add(lineVisual);
-                    Viewport.Children.Add(lineVisual);
-                }
-            }
-
-            if (isHit)
-            {
-                torus.ChangeColor(torus.GetLighterColor());
-            }
-        }
-
-        public void TraceRays(Cone cone)
-        {
-            Transform3D transform = cone.Model.Transform;
-            bool isHit = false;
-            foreach (var ray in rays)
-            {
-                Ray transformedRay = TransformRay(ray, transform);
-                if (cone.IntersectRay(transformedRay, out Point3D hitPoint))
-                {
-                    isHit = true;
-                    Debug.WriteLine($"Промінь потрапив у конус в точці {hitPoint}");
-                    var lineVisual = CreateLineVisual(ray.Origin, hitPoint, 0.05, Colors.Red);
-                    var sphereVisual = CreateSphereVisual(hitPoint, 0.1, Colors.Yellow);
-                    rayVisuals.Add(lineVisual);
-                    rayVisuals.Add(sphereVisual);
-                    Viewport.Children.Add(lineVisual);
-                    Viewport.Children.Add(sphereVisual);
-                }
-                else
-                {
-                    var lineVisual = CreateLineVisual(ray.Origin, ray.Origin + ray.Direction * RayLength, 0.05, Colors.Blue);
-                    rayVisuals.Add(lineVisual);
-                    Viewport.Children.Add(lineVisual);
-                }
-            }
-
-            if (isHit)
-            {
-                cone.ChangeColor(cone.GetLighterColor());
-            }
-        }
-
-        public void TraceRays(Cylinder cylinder)
-        {
-            Transform3D transform = cylinder.Model.Transform;
-            bool isHit = false;
-            foreach (var ray in rays)
-            {
-                Ray transformedRay = TransformRay(ray, transform);
-                if (cylinder.IntersectRay(transformedRay, out Point3D hitPoint))
-                {
-                    isHit = true;
-                    var lineVisual = CreateLineVisual(ray.Origin, hitPoint, 0.05, Colors.Red);
-                    var sphereVisual = CreateSphereVisual(hitPoint, 0.1, Colors.Yellow);
-                    rayVisuals.Add(lineVisual);
-                    rayVisuals.Add(sphereVisual);
-                    Viewport.Children.Add(lineVisual);
-                    Viewport.Children.Add(sphereVisual);
-                }
-                else
-                {
-                    var lineVisual = CreateLineVisual(ray.Origin, ray.Origin + ray.Direction * RayLength, 0.05, Colors.Blue);
-                    rayVisuals.Add(lineVisual);
-                    Viewport.Children.Add(lineVisual);
-                }
-            }
-
-            if (isHit)
-            {
-                cylinder.ChangeColor(cylinder.GetLighterColor());
-            }
-        }
-
-        public void TraceRays(Circle circle)
-        {
-            Transform3D transform = circle.Model.Transform;
-            bool isHit = false;
-            foreach (var ray in rays)
-            {
-                Ray transformedRay = TransformRay(ray, transform);
-                if (circle.IntersectRay(transformedRay, out Point3D hitPoint))
-                {
-                    isHit = true;
-                    var lineVisual = CreateLineVisual(ray.Origin, hitPoint, 0.05, Colors.Red);
-                    var sphereVisual = CreateSphereVisual(hitPoint, 0.1, Colors.Yellow);
-                    rayVisuals.Add(lineVisual);
-                    rayVisuals.Add(sphereVisual);
-                    Viewport.Children.Add(lineVisual);
-                    Viewport.Children.Add(sphereVisual);
-                }
-                else
-                {
-                    var lineVisual = CreateLineVisual(ray.Origin, ray.Origin + ray.Direction * RayLength, 0.05, Colors.Blue);
-                    rayVisuals.Add(lineVisual);
-                    Viewport.Children.Add(lineVisual);
-                }
-            }
-
-            if (isHit)
-            {
-                circle.ChangeColor(circle.GetLighterColor());
-            }
-        }
+        
 
         public Intersection FindNearestIntersection(Ray ray, GeometryModel3D model)
         {

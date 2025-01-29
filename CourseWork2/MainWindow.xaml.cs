@@ -29,7 +29,7 @@ namespace RayGen
         private System.Windows.Media.Media3D.Vector3D lightDirection = new System.Windows.Media.Media3D.Vector3D(-1, -1, -1);
 
         private List<FigureInfo> figuresInfo = new List<FigureInfo>();
-
+       
         public MainWindow()
         {
             InitializeComponent();
@@ -180,12 +180,14 @@ namespace RayGen
             modelVisual.Content = plane.Model;
 
             AddShape("Plane", modelVisual, color, material, plane);
+           
         }
 
         private void AddPlane(object sender, RoutedEventArgs e)
         {
             DrawPlane();
             UpdateFigureTransforms();
+            
         }
 
        
@@ -207,6 +209,7 @@ namespace RayGen
             debugTextBox.AppendText($"Current children count in viewport: {viewport3d.Children.Count}\n");
 
             cubes.Add(cube); 
+           
 
             debugTextBox.AppendText($"Added cube with color: {color}\n");
 
@@ -249,6 +252,7 @@ namespace RayGen
             modelVisual.Content = circle.Model;
 
             AddShape("Circle", modelVisual, System.Windows.Media.Colors.DarkCyan, material, circle);
+            
         }
 
         private void AddCilinder(object sender, RoutedEventArgs e)
@@ -260,6 +264,7 @@ namespace RayGen
             modelVisual.Content = cylinder.Model;
 
             AddShape("Cilinder", modelVisual, System.Windows.Media.Colors.Red, material, cylinder);
+          
         }
 
         private void AddCone(object sender, RoutedEventArgs e)
@@ -271,6 +276,7 @@ namespace RayGen
             modelVisual.Content = cone.Model;
 
             AddShape("Cone", modelVisual, System.Windows.Media.Colors.Green, material, cone);
+           
         }
 
         private void AddSphere(object sender, RoutedEventArgs e)
@@ -285,6 +291,7 @@ namespace RayGen
 
             AddShape("Sphere", modelVisual3D, color, material, sphere);
             debugTextBox.AppendText($"Sphere added with material: {material.GetType().Name}\n");
+            
         }
 
         private void AddTorus(object sender, RoutedEventArgs e)
@@ -300,6 +307,7 @@ namespace RayGen
             modelVisual3D.Content = torus.Model;
 
             AddShape("Torus", modelVisual3D, System.Windows.Media.Colors.Yellow, material, torus);
+               
             }
             catch (Exception ex)
             {
@@ -341,15 +349,25 @@ namespace RayGen
             
             UpdateFigureTransforms();
 
-            var (planes, spheres, toruses, cones, cylinders, circles, cubes) = GetFiguresLists();
+            
+            var figures = GetFiguresLists();
+
+           
             var modelVisuals = viewport3d.Children.OfType<ModelVisual3D>().ToList();
-            foreach (var plane in planes)
+
+           
+            foreach (var figure in figures)
             {
-                var (p0, p1, p2, p3) = plane.GetTransformedPositions();
-                Debug.WriteLine($"Plane Transformed Positions: P0: {p0}, P1: {p1}, P2: {p2}, P3: {p3}");
-                plane.UpdatePositions(p0,p1,p2,p3);
+                if (figure is Figures.Plane plane)
+                {
+                    
+                    var (p0, p1, p2, p3) = plane.GetTransformedPositions();
+                    Debug.WriteLine($"Plane Transformed Positions: P0: {p0}, P1: {p1}, P2: {p2}, P3: {p3}");
+                    plane.UpdatePositions(p0, p1, p2, p3);
+                } 
             }
-            rayTracer.ShowRayTracingResults(modelVisuals, planes, spheres, toruses, cones, cylinders, circles, cubes);
+            rayTracer.ShowRayTracingResults(modelVisuals, figures.OfType<Figures.Figures>().ToList());
+              
         }
 
 
@@ -412,65 +430,36 @@ namespace RayGen
 
 
 
-        private (List<Figures.Plane> planes, List<Sphere> spheres, List<Torus> toruses, List<Cone> cones, List<Cylinder> cylinders, List<Circle> circles, List<Cube> cubes) GetFiguresLists()
-        {
-            List<Figures.Plane> planes = new List<Figures.Plane>();
-            List<Sphere> spheres = new List<Sphere>();
-            List<Torus> toruses = new List<Torus>();
-            List<Cone> cones = new List<Cone>();
-            List<Cylinder> cylinders = new List<Cylinder>();
-            List<Circle> circles = new List<Circle>();
-            List<Cube> cubes = new List<Cube>();
+        
 
-            foreach (var figureInfo in figuresInfo)
+            private List<Figures.Figures> GetFiguresLists()
             {
-                var modelVisual = figureInfo.ModelVisual;
+                List<Figures.Figures> figures = new List<Figures.Figures>();
 
-                if (modelVisual.Transform is Transform3DGroup transformGroup)
+                foreach (var figureInfo in figuresInfo)
                 {
-                    var translation = modelTransformer.GetTranslation(transformGroup);
-                    var rotation = modelTransformer.GetRotation(transformGroup);
-                    var scale = modelTransformer.GetScale(transformGroup);
+                    var modelVisual = figureInfo.ModelVisual;
 
-                    figureInfo.Position = new Point3D(translation.X, translation.Y, translation.Z);
-                    figureInfo.Rotation = new System.Windows.Media.Media3D.Vector3D(rotation.Axis.X, rotation.Axis.Y, rotation.Axis.Z);
-                    figureInfo.Scale = scale;
+                    if (modelVisual.Transform is Transform3DGroup transformGroup)
+                    {
+                        var translation = modelTransformer.GetTranslation(transformGroup);
+                        var rotation = modelTransformer.GetRotation(transformGroup);
+                        var scale = modelTransformer.GetScale(transformGroup);
 
-                    debugTextBox.AppendText($"Updated {figureInfo.Name} - Position: {figureInfo.Position}, Rotation: {figureInfo.Rotation}, Scale: {figureInfo.Scale}\n");
+                        figureInfo.Position = new Point3D(translation.X, translation.Y, translation.Z);
+                        figureInfo.Rotation = new System.Windows.Media.Media3D.Vector3D(rotation.Axis.X, rotation.Axis.Y, rotation.Axis.Z);
+                        figureInfo.Scale = scale;
+
+                        debugTextBox.AppendText($"Updated {figureInfo.Name} - Position: {figureInfo.Position}, Rotation: {figureInfo.Rotation}, Scale: {figureInfo.Scale}\n");
+                    }
+
+                   
                 }
 
-                if (figureInfo.FigureObject is Figures.Plane plane)
-                {
-                    planes.Add(plane);
-                }
-                else if (figureInfo.FigureObject is Sphere sphere)
-                {
-                    spheres.Add(sphere);
-                }
-                else if (figureInfo.FigureObject is Torus torus)
-                {
-                    toruses.Add(torus);
-                }
-                else if (figureInfo.FigureObject is Cone cone)
-                {
-                    cones.Add(cone);
-                }
-                else if (figureInfo.FigureObject is Cylinder cylinder)
-                {
-                    cylinders.Add(cylinder);
-                }
-                else if (figureInfo.FigureObject is Circle circle)
-                {
-                    circles.Add(circle);
-                }
-                else if (figureInfo.FigureObject is Cube cube)
-                {
-                    cubes.Add(cube);
-                }
+                return figures;
             }
 
-            return (planes, spheres, toruses, cones, cylinders, circles, cubes);
-        }
+        
 
 
 

@@ -3,10 +3,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using Figures.Materials;
+using static Figures.RayTracerLight;
 
 namespace Figures
 {
-    public abstract class ergreg
+    public abstract class Figures
     {
         public event EventHandler<MouseButtonEventArgs> MouseDown;
         public event EventHandler DeleteClicked;
@@ -38,6 +39,8 @@ namespace Figures
         }
 
         public abstract void Draw(MyMaterial material);
+        public abstract bool IntersectRay(Ray ray, out Point3D hitPoint);
+
 
         public virtual void InvokeDeleteClicked()
         {
