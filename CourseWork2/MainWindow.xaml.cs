@@ -19,6 +19,7 @@ namespace RayGen
 
     public partial class MainWindow : Window
     {
+        private ModelController modelController;
         private CameraControl cameraControl;
         private PerspectiveCamera mainCamera;
         private ModelVisual3D selectedModel;
@@ -44,6 +45,7 @@ namespace RayGen
             KeyDown += Window_KeyDown;
             shapesListBox.SelectionChanged += ShapesListBox_SelectionChanged;
             cameraControl = new CameraControl(viewport3d);
+            modelController = new ModelController(debugTextBox);
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -296,9 +298,6 @@ namespace RayGen
               
         }
 
-
-
-
         private void UpdateFigureTransforms()
         {
             foreach (var figureInfo in figuresInfo)
@@ -407,40 +406,21 @@ namespace RayGen
                 return figures;
             }
 
-        
-
-
-
-        private void InitializeTransformGroup()
-        {
-            selectedModel.Transform = modelTransformer.CreateTransformGroup();
-        }
 
         private void Viewport3D_MouseDown(object sender, MouseButtonEventArgs e)
         {
             try
             {
                 previousMousePos = e.GetPosition(viewport3d);
-
                 System.Windows.Point mousePos = e.GetPosition(viewport3d);
                 HitTestResult hitTestResult = VisualTreeHelper.HitTest(viewport3d, mousePos);
 
-                if (hitTestResult != null && hitTestResult.VisualHit is ModelVisual3D)
+                if (hitTestResult != null && hitTestResult.VisualHit is ModelVisual3D model)
                 {
-                    selectedModel = hitTestResult.VisualHit as ModelVisual3D;
-
-                    if (selectedModel.Transform is Transform3DGroup existingTransformGroup)
-                    {
-                        _transformGroup = existingTransformGroup;
-                    }
-                    else
-                    {
-                        InitializeTransformGroup();
-                    }
-
+                    modelController.SelectModel(model);
                     previousMousePos = e.GetPosition(viewport3d);
                     UpdateTransformFields();
-                    SelectShapeInListBox(selectedModel);
+                    SelectShapeInListBox(model);
                 }
             }
             catch (Exception ex)
@@ -449,29 +429,34 @@ namespace RayGen
             }
         }
 
+
         private void Viewport3D_MouseMove(object sender, MouseEventArgs e)
         {
             try
             {
-                if (e.LeftButton == MouseButtonState.Pressed && selectedModel != null)
+                if (e.LeftButton == MouseButtonState.Pressed)
                 {
                     System.Windows.Point currentMousePos = e.GetPosition(viewport3d);
+                    double deltaX = currentMousePos.X - previousMousePos.X;
+                    double deltaY = currentMousePos.Y - previousMousePos.Y;
 
                     if (Keyboard.IsKeyDown(Key.M))
                     {
-                        ApplyTranslation(currentMousePos);
+                        modelController.ApplyTranslation(deltaX / 100, -deltaY / 100, 0);
                     }
 
                     if (Keyboard.IsKeyDown(Key.R))
                     {
-                        ApplyRotation(currentMousePos);
+                        modelController.ApplyRotation(deltaY, deltaX);
                     }
 
                     if (Keyboard.IsKeyDown(Key.E))
                     {
-                        ApplyScaling(currentMousePos);
+                        double scaleFactor = 1 + deltaY / 100.0;
+                        modelController.ApplyScaling(scaleFactor, scaleFactor, scaleFactor);
                     }
 
+                    previousMousePos = currentMousePos;
                     UpdateTransformFields();
                 }
             }
@@ -481,36 +466,6 @@ namespace RayGen
             }
         }
 
-        private void ApplyTranslation(System.Windows.Point currentMousePos)
-        {
-            Point3D currentHitPosition = modelTransformer.GetHitPosition(viewport3d, currentMousePos);
-            Point3D previousHitPosition = modelTransformer.GetHitPosition(viewport3d, previousMousePos);
-            double deltaX = currentHitPosition.X - previousHitPosition.X;
-            double deltaY = currentHitPosition.Y - previousHitPosition.Y;
-            double deltaZ = currentHitPosition.Z - previousHitPosition.Z;
-
-            modelTransformer.TranslateModel((Transform3DGroup)selectedModel.Transform, deltaX, deltaY, deltaZ);
-            previousMousePos = currentMousePos;
-        }
-
-        private void ApplyRotation(System.Windows.Point currentMousePos)
-        {
-            double dx = currentMousePos.X - previousMousePos.X;
-            double dy = currentMousePos.Y - previousMousePos.Y;
-
-            modelTransformer.RotateModel((Transform3DGroup)selectedModel.Transform, dx, dy);
-            previousMousePos = currentMousePos;
-        }
-
-        private void ApplyScaling(System.Windows.Point currentMousePos)
-        {
-            double scaleDeltaX = currentMousePos.X - previousMousePos.X;
-            double scaleDeltaY = currentMousePos.Y - previousMousePos.Y;
-            double scaleDeltaZ = currentMousePos.X - previousMousePos.X;
-
-            modelTransformer.ScaleModel((Transform3DGroup)selectedModel.Transform, scaleDeltaX, scaleDeltaY, scaleDeltaZ);
-            previousMousePos = currentMousePos;
-        }
 
 
         private void Viewport3D_MouseUp(object sender, MouseButtonEventArgs e)
@@ -519,24 +474,7 @@ namespace RayGen
             Mouse.Capture(null);
         }
 
-        private void Model_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            try
-            {
-                selectedModel = sender as ModelVisual3D;
-
-                if (selectedModel != null)
-                {
-                    InitializeContextMenu();
-                    UpdateTransformFields();
-                    SelectShapeInListBox(selectedModel);
-                }
-            }
-            catch (Exception ex)
-            {
-                debugTextBox.AppendText($"Error on preview mouse left button down: {ex.Message}\n");
-            }
-        }
+        
 
         private void ApplyTransform_Click(object sender, RoutedEventArgs e)
         {
