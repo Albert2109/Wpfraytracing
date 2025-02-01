@@ -125,45 +125,41 @@ namespace RayGen
             var material = GetSelectedMaterial(color);
 
             Cube cube = new Cube(new Point3D(7, -5, 0), 5, material);
-
-            ModelVisual3D modelVisual = new ModelVisual3D();
-            modelVisual.Content = cube.Model;
-
+            var modelVisual = new ModelVisual3D { Content = cube.Model };
             AddShape("Cube", modelVisual, color, material, cube);
 
-            debugTextBox.AppendText("Cube created and added to viewport.\n");
-            debugTextBox.AppendText($"Current children count in viewport: {viewport3d.Children.Count}\n");
 
-            cubes.Add(cube); 
-           
+            LogDebugMessage("Cube created and added to viewport.");
+            LogDebugMessage($"Current children count in viewport: {viewport3d.Children.Count}");
+            LogDebugMessage($"Added cube with color: {color}");
 
-            debugTextBox.AppendText($"Added cube with color: {color}\n");
+            cubes.Add(cube);
+            AnalyzeViewportObjects();
 
+            LogDebugMessage($"Found {cubes.Count} cube(s) in viewport.");
+        }
+
+        private void LogDebugMessage(string message)
+        {
+            debugTextBox.AppendText(message + "\n");
+        }
+
+        private void AnalyzeViewportObjects()
+        {
             foreach (var item in viewport3d.Children)
             {
-                if (item is ModelVisual3D mv)
+                if (item is ModelVisual3D { Content: Model3DGroup modelGroup })
                 {
-                    if (mv.Content is Model3DGroup mg)
+                    foreach (var child in modelGroup.Children)
                     {
-                        foreach (var child in mg.Children)
+                        if (child is GeometryModel3D { Geometry: MeshGeometry3D mesh })
                         {
-                            if (child is GeometryModel3D gm && gm.Geometry is MeshGeometry3D mesh)
-                            {
-                                if (mesh.Positions.Count == 8)
-                                {
-                                    debugTextBox.AppendText("Found a Cube in the viewport.\n");
-                                }
-                                else
-                                {
-                                    debugTextBox.AppendText("Found a non-Cube object in the viewport.\n");
-                                }
-                            }
+                            string objectType = mesh.Positions.Count == 8 ? "Cube" : "non-Cube object";
+                            LogDebugMessage($"Found a {objectType} in the viewport.");
                         }
                     }
                 }
             }
-
-            debugTextBox.AppendText($"Found {cubes.Count} cube(s) in viewport.\n");
         }
 
 
@@ -750,16 +746,14 @@ namespace RayGen
             double specularIntensity = double.TryParse(specularIntensityTextBox.Text, out double specularValue) ? specularValue : defaultSpecularIntensity;
             double reflectionIntensity = double.TryParse(reflectionIntensityTextBox.Text, out double reflectionValue) ? reflectionValue : defaultReflectionIntensity;
 
-            switch (selectedMaterialType)
+            var materialConstructors = new Dictionary<string, Func<MyMaterial>>()
             {
-                case "Specular":
-                    material = new MySpecularMaterial(color, shininess, specularIntensity, reflectionIntensity);
-                    break;
-                case "Diffuse":
-                default:
-                    material = new MyDiffuseMaterial(color);
-                    break;
-            }
+                { "Specular", () => new MySpecularMaterial(color, shininess, specularIntensity, reflectionIntensity) },
+                { "Diffuse", () => new MyDiffuseMaterial(color) }
+            };
+
+            materialConstructors.TryGetValue(selectedMaterialType, out var constructor);
+            material = constructor?.Invoke() ?? new MyDiffuseMaterial(color);
 
             return material;
         }
