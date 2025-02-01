@@ -1,4 +1,5 @@
-﻿using Figures;
+﻿using CourseWork2;
+using Figures;
 using Figures.Materials;
 using Microsoft.Win32;
 using System;
@@ -15,8 +16,10 @@ using FM = Figures.Materials;
 
 namespace RayGen
 {
+
     public partial class MainWindow : Window
     {
+        private CameraControl cameraControl;
         private PerspectiveCamera mainCamera;
         private ModelVisual3D selectedModel;
         private System.Windows.Point previousMousePos;
@@ -33,8 +36,6 @@ namespace RayGen
         public MainWindow()
         {
             InitializeComponent();
-            InitializeCamera();
-            InitializeLighting();
             InitializeContextMenu();
             modelTransformer = new Nav();
             viewport3d.MouseDown += Viewport3D_MouseDown;
@@ -42,27 +43,12 @@ namespace RayGen
             viewport3d.MouseUp += Viewport3D_MouseUp;
             KeyDown += Window_KeyDown;
             shapesListBox.SelectionChanged += ShapesListBox_SelectionChanged;
+            cameraControl = new CameraControl(viewport3d);
         }
 
-        private void InitializeCamera()
+        private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            mainCamera = new PerspectiveCamera(new Point3D(0, 0, 10), new System.Windows.Media.Media3D.Vector3D(0, 0, -1), new System.Windows.Media.Media3D.Vector3D(0, 1, 0), 45);
-            viewport3d.Camera = mainCamera;
-        }
-
-        private void InitializeLighting()
-        {
-            AmbientLight ambientLight = new AmbientLight(System.Windows.Media.Colors.Gray);
-            ModelVisual3D ambientLightModel = new ModelVisual3D();
-            ambientLightModel.Content = ambientLight;
-            viewport3d.Children.Add(ambientLightModel);
-
-            DirectionalLight directionalLight = new DirectionalLight();
-            directionalLight.Color = System.Windows.Media.Colors.White;
-            directionalLight.Direction = new System.Windows.Media.Media3D.Vector3D(-1, -1, -1);
-            ModelVisual3D directionalLightModel = new ModelVisual3D();
-            directionalLightModel.Content = directionalLight;
-            viewport3d.Children.Add(directionalLightModel);
+            cameraControl.HandleKeyDown(sender, e);
         }
 
         private void InitializeContextMenu()
@@ -75,66 +61,6 @@ namespace RayGen
             viewport3d.ContextMenu = viewportContextMenu;
         }
 
-        private void Window_KeyDown(object sender, KeyEventArgs e)
-        {
-            double moveSpeed = 1;
-            double rotateSpeed = 1;
-
-            switch (e.Key)
-            {
-                case Key.W:
-                    MoveCamera(moveSpeed * mainCamera.LookDirection);
-                    break;
-                case Key.S:
-                    MoveCamera(-moveSpeed * mainCamera.LookDirection);
-                    break;
-                case Key.A:
-                    MoveCamera(-System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.LookDirection, mainCamera.UpDirection) * moveSpeed);
-                    break;
-                case Key.D:
-                    MoveCamera(System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.LookDirection, mainCamera.UpDirection) * moveSpeed);
-                    break;
-                case Key.Left:
-                    RotateCamera(rotateSpeed, mainCamera.UpDirection);
-                    break;
-                case Key.Up:
-                    RotateCamera(-rotateSpeed, System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.UpDirection, mainCamera.LookDirection));
-                    break;
-                case Key.Down:
-                    RotateCamera(rotateSpeed, System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.UpDirection, mainCamera.LookDirection));
-                    break;
-                case Key.Right:
-                    RotateCamera(-rotateSpeed, mainCamera.UpDirection);
-                    break;
-                case Key.Space:
-                    MoveCamera(new System.Windows.Media.Media3D.Vector3D(0, moveSpeed, 0));
-                    break;
-                case Key.LeftShift:
-                    MoveCamera(new System.Windows.Media.Media3D.Vector3D(0, -moveSpeed, 0));
-                    break;
-            }
-        }
-
-        private void MoveCamera(System.Windows.Media.Media3D.Vector3D direction)
-        {
-            mainCamera.Position += direction;
-        }
-
-        private void RotateCamera(double angle, System.Windows.Media.Media3D.Vector3D axis)
-        {
-            Point3D cameraPosition = mainCamera.Position;
-            System.Windows.Media.Media3D.Vector3D cameraLookDirection = mainCamera.LookDirection;
-            System.Windows.Media.Media3D.Vector3D cameraUpDirection = mainCamera.UpDirection;
-
-            RotateTransform3D rotation = new RotateTransform3D(new AxisAngleRotation3D(axis, angle), cameraPosition);
-            cameraLookDirection = rotation.Transform(cameraLookDirection);
-            cameraUpDirection = rotation.Transform(cameraUpDirection);
-
-            mainCamera.LookDirection = cameraLookDirection;
-            mainCamera.UpDirection = cameraUpDirection;
-
-            mainCamera.Position = cameraPosition + cameraLookDirection;
-        }
 
         private void AddShape(string shapeName, ModelVisual3D modelVisual, System.Windows.Media.Color color, MyMaterial material, object figureObject)
         {
