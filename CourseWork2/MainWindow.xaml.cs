@@ -128,6 +128,7 @@ namespace RayGen
             var modelVisual = new ModelVisual3D { Content = cube.Model };
             AddShape("Cube", modelVisual, color, material, cube);
 
+
             LogDebugMessage("Cube created and added to viewport.");
             LogDebugMessage($"Current children count in viewport: {viewport3d.Children.Count}");
             LogDebugMessage($"Added cube with color: {color}");
@@ -745,16 +746,14 @@ namespace RayGen
             double specularIntensity = double.TryParse(specularIntensityTextBox.Text, out double specularValue) ? specularValue : defaultSpecularIntensity;
             double reflectionIntensity = double.TryParse(reflectionIntensityTextBox.Text, out double reflectionValue) ? reflectionValue : defaultReflectionIntensity;
 
-            switch (selectedMaterialType)
+            var materialConstructors = new Dictionary<string, Func<MyMaterial>>()
             {
-                case "Specular":
-                    material = new MySpecularMaterial(color, shininess, specularIntensity, reflectionIntensity);
-                    break;
-                case "Diffuse":
-                default:
-                    material = new MyDiffuseMaterial(color);
-                    break;
-            }
+                { "Specular", () => new MySpecularMaterial(color, shininess, specularIntensity, reflectionIntensity) },
+                { "Diffuse", () => new MyDiffuseMaterial(color) }
+            };
+
+            materialConstructors.TryGetValue(selectedMaterialType, out var constructor);
+            material = constructor?.Invoke() ?? new MyDiffuseMaterial(color);
 
             return material;
         }
