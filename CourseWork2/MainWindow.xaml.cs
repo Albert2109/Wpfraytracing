@@ -80,38 +80,23 @@ namespace RayGen
             double moveSpeed = 1;
             double rotateSpeed = 1;
 
-            switch (e.Key)
+            var keyActions = new Dictionary<Key, Action>
             {
-                case Key.W:
-                    MoveCamera(moveSpeed * mainCamera.LookDirection);
-                    break;
-                case Key.S:
-                    MoveCamera(-moveSpeed * mainCamera.LookDirection);
-                    break;
-                case Key.A:
-                    MoveCamera(-System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.LookDirection, mainCamera.UpDirection) * moveSpeed);
-                    break;
-                case Key.D:
-                    MoveCamera(System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.LookDirection, mainCamera.UpDirection) * moveSpeed);
-                    break;
-                case Key.Left:
-                    RotateCamera(rotateSpeed, mainCamera.UpDirection);
-                    break;
-                case Key.Up:
-                    RotateCamera(-rotateSpeed, System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.UpDirection, mainCamera.LookDirection));
-                    break;
-                case Key.Down:
-                    RotateCamera(rotateSpeed, System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.UpDirection, mainCamera.LookDirection));
-                    break;
-                case Key.Right:
-                    RotateCamera(-rotateSpeed, mainCamera.UpDirection);
-                    break;
-                case Key.Space:
-                    MoveCamera(new System.Windows.Media.Media3D.Vector3D(0, moveSpeed, 0));
-                    break;
-                case Key.LeftShift:
-                    MoveCamera(new System.Windows.Media.Media3D.Vector3D(0, -moveSpeed, 0));
-                    break;
+                { Key.W, () => MoveCamera(moveSpeed * mainCamera.LookDirection) },
+                { Key.S, () => MoveCamera(-moveSpeed * mainCamera.LookDirection) },
+                { Key.A, () => MoveCamera(-System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.LookDirection, mainCamera.UpDirection) * moveSpeed) },
+                { Key.D, () => MoveCamera(System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.LookDirection, mainCamera.UpDirection) * moveSpeed) },
+                { Key.Left, () => RotateCamera(rotateSpeed, mainCamera.UpDirection) },
+                { Key.Up, () => RotateCamera(-rotateSpeed, System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.UpDirection, mainCamera.LookDirection)) },
+                { Key.Down, () => RotateCamera(rotateSpeed, System.Windows.Media.Media3D.Vector3D.CrossProduct(mainCamera.UpDirection, mainCamera.LookDirection)) },
+                { Key.Right, () => RotateCamera(-rotateSpeed, mainCamera.UpDirection) },
+                { Key.Space, () => MoveCamera(new System.Windows.Media.Media3D.Vector3D(0, moveSpeed, 0)) },
+                { Key.LeftShift, () => MoveCamera(new System.Windows.Media.Media3D.Vector3D(0, -moveSpeed, 0)) }
+            };
+
+            if (keyActions.ContainsKey(e.Key))
+            {
+                keyActions[e.Key].Invoke();
             }
         }
 
