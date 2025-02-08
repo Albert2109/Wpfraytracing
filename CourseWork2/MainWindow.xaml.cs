@@ -313,52 +313,67 @@ namespace RayGen
                     figureInfo.Position = new Point3D(translation.X, translation.Y, translation.Z);
                     figureInfo.Rotation = new System.Windows.Media.Media3D.Vector3D(rotation.Axis.X, rotation.Axis.Y, rotation.Axis.Z);
                     figureInfo.Scale = scale;
-                    if (figureInfo.FigureObject is Plane plane)
-                    {
-                        plane.ApplyTransform(transformGroup);
-                        var (transformedP0, transformedP1, transformedP2, transformedP3) = plane.GetTransformedPositions();
-                        plane.UpdatePositions(transformedP0, transformedP1, transformedP2, transformedP3);
-                    }
-                    else if (figureInfo.FigureObject is Circle circle)
-                    {
-                        circle.ApplyTransform(transformGroup);
-                        var transformedCenter = transformGroup.Transform(circle.Center);
-                        var transformedRadiusPoint = transformGroup.Transform(new Point3D(circle.Center.X + circle.Radius, circle.Center.Y, circle.Center.Z));
-                        double transformedRadius = (transformedRadiusPoint - transformedCenter).Length;
-                        circle.UpdatePositions(transformedCenter, transformedRadius);
-                    }
-                    else if (figureInfo.FigureObject is Torus torus)
-                    {
-                        torus.ApplyTransform(transformGroup);
-                        var transformedCenter = transformGroup.Transform(torus.Center);
-                        var transformedRadiusPoint = transformGroup.Transform(new Point3D(torus.Center.X + torus.Radius, torus.Center.Y, torus.Center.Z));
-                        double transformedRadius = (transformedRadiusPoint - transformedCenter).Length;
-                        var transformedRadius2Point = transformGroup.Transform(new Point3D(torus.Center.X + torus.Radius2, torus.Center.Y, torus.Center.Z));
-                        double transformedRadius2 = (transformedRadius2Point - transformedCenter).Length;
-                        torus.UpdatePositions(transformedCenter, transformedRadius, transformedRadius2);
-                    }
-                    else if (figureInfo.FigureObject is Sphere sphere)
-                    {
-                        sphere.ApplyTransform(transformGroup);
-                        var transformedCenter = transformGroup.Transform(sphere.Center);
-                        var transformedRadiusPoint = transformGroup.Transform(new Point3D(sphere.Center.X + sphere.Radius, sphere.Center.Y, sphere.Center.Z));
-                        double transformedRadius = (transformedRadiusPoint - transformedCenter).Length;
-                        sphere.UpdatePositions(transformedCenter, transformedRadius);
-                    }
 
+                    TransformToFigure(figureInfo.FigureObject, transformGroup);
 
                     debugTextBox.AppendText($"Updated {figureInfo.Name} - Position: {figureInfo.Position}, Rotation: {figureInfo.Rotation}, Scale: {figureInfo.Scale}\n");
                 }
             }
         }
 
+        private void TransformToFigure(object figure, Transform3DGroup transformGroup)
+        {
+            if (figure is Plane plane)
+            {
+                plane.ApplyTransform(transformGroup);
+                var (p0, p1, p2, p3) = plane.GetTransformedPositions();
+                plane.UpdatePositions(p0, p1, p2, p3);
+            }
+            else if (figure is Circle circle)
+            {
+                circle.ApplyTransform(transformGroup);
+                UpdateFigure(circle, transformGroup);
+            }
+            else if (figure is Torus torus)
+            {
+                torus.ApplyTransform(transformGroup);
+                UpdateTorus(torus, transformGroup);
+            }
+            else if (figure is Sphere sphere)
+            {
+                sphere.ApplyTransform(transformGroup);
+                UpdateFigure(sphere, transformGroup);
+            }
+        }
+
+        private void UpdateFigure(dynamic figure, Transform3DGroup transformGroup)
+        {
+            var transformedCenter = transformGroup.Transform(figure.Center);
+            var transformedRadiusPoint = transformGroup.Transform(new Point3D(figure.Center.X + figure.Radius, figure.Center.Y, figure.Center.Z));
+            double transformedRadius = (transformedRadiusPoint - transformedCenter).Length;
+
+            figure.UpdatePositions(transformedCenter, transformedRadius);
+        }
+
+        private void UpdateTorus(Torus torus, Transform3DGroup transformGroup)
+        {
+            var transformedCenter = transformGroup.Transform(torus.Center);
+            var transformedRadiusPoint = transformGroup.Transform(new Point3D(torus.Center.X + torus.Radius, torus.Center.Y, torus.Center.Z));
+            var transformedRadius2Point = transformGroup.Transform(new Point3D(torus.Center.X + torus.Radius2, torus.Center.Y, torus.Center.Z));
+
+            double transformedRadius = (transformedRadiusPoint - transformedCenter).Length;
+            double transformedRadius2 = (transformedRadius2Point - transformedCenter).Length;
+
+            torus.UpdatePositions(transformedCenter, transformedRadius, transformedRadius2);
+        }
 
 
 
 
-        
 
-            private List<Figures.Figures> GetFiguresLists()
+
+
+        private List<Figures.Figures> GetFiguresLists()
             {
                 List<Figures.Figures> figures = new List<Figures.Figures>();
 
